@@ -5,6 +5,7 @@ import type {
   OnPlayerCraftedItemEvent,
   OnPlayerJoinedGameEvent,
   OnPlayerMainInventoryChangedEvent,
+  OnGuiClosedEvent,
 } from "factorio:runtime";
 import { AUTOCRAFT_SOUND_ENABLED, CRAFTING_FINISHED_SOUND, SHORTCUT_NAME } from "./constants";
 import { add_autocraft_logistics_section, do_crafting, pre_compute_recipes } from "./autocraft";
@@ -40,9 +41,16 @@ const create_autocraft_logistics_section = (
   add_autocraft_logistics_section(player);
 };
 
-const on_player_main_inventory_changed = (event: OnPlayerMainInventoryChangedEvent) => {
+const trigger_crafting = (event: OnPlayerMainInventoryChangedEvent | OnGuiClosedEvent) => {
   const player = game.get_player(event.player_index);
   if (!player) return;
+
+  if (
+    (event.name === defines.events.on_gui_opened || event.name === defines.events.on_gui_closed) &&
+    (event as OnGuiClosedEvent).gui_type !== defines.gui_type.controller
+  ) {
+    return;
+  }
 
   do_crafting(player);
 };
@@ -107,8 +115,12 @@ script.on_configuration_changed(on_configuration_changed);
 
 script.on_event(defines.events.on_player_crafted_item, on_player_crafted_item);
 script.on_event(defines.events.on_player_cancelled_crafting, on_player_cancelled_crafting);
-script.on_event(defines.events.on_player_main_inventory_changed, on_player_main_inventory_changed);
 script.on_event(defines.events.on_lua_shortcut, on_lua_shortcut);
+
+// to avoid an nth_tick trigger, we check after the controller UI is closed
+// in case the player modified their requests
+script.on_event(defines.events.on_gui_closed, trigger_crafting);
+script.on_event(defines.events.on_player_main_inventory_changed, trigger_crafting);
 
 script.on_event(defines.events.on_player_controller_changed, create_autocraft_logistics_section);
 script.on_event(defines.events.on_player_joined_game, create_autocraft_logistics_section);
