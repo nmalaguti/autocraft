@@ -9,12 +9,6 @@ import type {
 import { AUTOCRAFT_SOUND_ENABLED, CRAFTING_FINISHED_SOUND, SHORTCUT_NAME } from "./constants";
 import { add_autocraft_logistics_section, do_crafting, pre_compute_recipes } from "./autocraft";
 
-// const on_nth_tick = () => {
-//   for (const player of game.connected_players) {
-//     do_crafting(player);
-//   }
-// };
-
 const enable_player_force_logistics_requests = () => {
   // TODO: I only care about the player force, but maybe others will want more
   const player_force = game.forces["player"];
@@ -110,7 +104,6 @@ const on_lua_shortcut = (event: OnLuaShortcutEvent) => {
 
 script.on_init(on_init);
 script.on_configuration_changed(on_configuration_changed);
-// script.on_nth_tick(20, on_nth_tick);
 
 script.on_event(defines.events.on_player_crafted_item, on_player_crafted_item);
 script.on_event(defines.events.on_player_cancelled_crafting, on_player_cancelled_crafting);

@@ -30,7 +30,10 @@ Debugging can be done with [Factorio Modding Tool Kit](https://github.com/justar
 npm install
 
 # start watching
-npm run gulp dev
+npm run dev
+
+# build a release you can drop into your mods folder
+npm run release
 ```
 
 # Icons
