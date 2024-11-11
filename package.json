@@ -1,0 +1,27 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "gulp build",
+    "dev": "gulp dev",
+    "clean": "gulp clean",
+    "release": "gulp release",
+    "lint": "prettier . --check"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.14.0",
+    "@types/bun": "latest",
+    "del": "^8.0.0",
+    "eslint": "^9.14.0",
+    "gulp": "^5.0.0",
+    "gulp-execa": "^8.0.0",
+    "gulp-zip": "^6.0.0",
+    "prettier": "^3.3.3",
+    "typed-factorio": "^3.2.0",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.13.0",
+    "typescript-to-lua": "^1.27.0"
+  },
+  "prettier": {
+    "printWidth": 100
+  }
+}

@@ -1,0 +1,125 @@
+import type {
+  OnLuaShortcutEvent,
+  OnPlayerCancelledCraftingEvent,
+  OnPlayerControllerChangedEvent,
+  OnPlayerCraftedItemEvent,
+  OnPlayerJoinedGameEvent,
+  OnPlayerMainInventoryChangedEvent,
+} from "factorio:runtime";
+import { AUTOCRAFT_SOUND_ENABLED, CRAFTING_FINISHED_SOUND, SHORTCUT_NAME } from "./constants";
+import { add_autocraft_logistics_section, do_crafting, pre_compute_recipes } from "./autocraft";
+
+// const on_nth_tick = () => {
+//   for (const player of game.connected_players) {
+//     do_crafting(player);
+//   }
+// };
+
+const enable_player_force_logistics_requests = () => {
+  // TODO: I only care about the player force, but maybe others will want more
+  const player_force = game.forces["player"];
+  player_force.character_logistic_requests = true;
+};
+
+const on_configuration_changed = () => {
+  storage.recipes = pre_compute_recipes();
+
+  enable_player_force_logistics_requests();
+
+  for (const [, player] of pairs(game.players)) {
+    add_autocraft_logistics_section(player);
+  }
+};
+
+const on_init = () => {
+  storage.data = new LuaMap();
+
+  on_configuration_changed();
+};
+
+const create_autocraft_logistics_section = (
+  event: OnPlayerControllerChangedEvent | OnPlayerJoinedGameEvent,
+) => {
+  const player = game.get_player(event.player_index);
+  if (!player) return;
+
+  add_autocraft_logistics_section(player);
+};
+
+const on_player_main_inventory_changed = (event: OnPlayerMainInventoryChangedEvent) => {
+  const player = game.get_player(event.player_index);
+  if (!player) return;
+
+  do_crafting(player);
+};
+
+const on_player_crafted_item = (event: OnPlayerCraftedItemEvent) => {
+  if (!event.item_stack.valid_for_read) return;
+
+  const player = game.get_player(event.player_index);
+  if (!player?.crafting_queue) return;
+
+  const crafted_last_item_in_stack =
+    player.crafting_queue.length > 0 && player.crafting_queue[0].count === 1;
+
+  if (!crafted_last_item_in_stack) return;
+
+  const data = storage.data?.get(event.player_index);
+
+  if (data?.active_recipe_name === event.item_stack.name) {
+    data.active_recipe_name = undefined;
+    if (player.mod_settings[AUTOCRAFT_SOUND_ENABLED].value as boolean) {
+      player.play_sound({ path: CRAFTING_FINISHED_SOUND });
+    }
+    // last item in queue, immediately queue another
+    if (player.crafting_queue.length === 1) {
+      do_crafting(player, false);
+    }
+  } else {
+    // Volume is set to 0 in data-final-fixes. Play sound manually.
+    player.play_sound({ path: CRAFTING_FINISHED_SOUND });
+  }
+};
+
+const on_player_cancelled_crafting = (event: OnPlayerCancelledCraftingEvent) => {
+  const data = storage.data?.get(event.player_index);
+  if (data?.active_recipe_name !== event.recipe.name) return;
+
+  data.active_recipe_name = undefined;
+
+  const player = game.get_player(event.player_index);
+  if (!player) return;
+
+  player.set_shortcut_toggled(SHORTCUT_NAME, false);
+};
+
+const on_lua_shortcut = (event: OnLuaShortcutEvent) => {
+  if (event.prototype_name !== SHORTCUT_NAME) return;
+
+  enable_player_force_logistics_requests();
+
+  const player = game.get_player(event.player_index);
+  if (!player) return;
+
+  add_autocraft_logistics_section(player);
+
+  player.set_shortcut_toggled(SHORTCUT_NAME, !player.is_shortcut_toggled(SHORTCUT_NAME));
+
+  do_crafting(player);
+};
+
+script.on_init(on_init);
+script.on_configuration_changed(on_configuration_changed);
+// script.on_nth_tick(20, on_nth_tick);
+
+script.on_event(defines.events.on_player_crafted_item, on_player_crafted_item);
+script.on_event(defines.events.on_player_cancelled_crafting, on_player_cancelled_crafting);
+script.on_event(defines.events.on_player_main_inventory_changed, on_player_main_inventory_changed);
+script.on_event(defines.events.on_lua_shortcut, on_lua_shortcut);
+
+script.on_event(defines.events.on_player_controller_changed, create_autocraft_logistics_section);
+script.on_event(defines.events.on_player_joined_game, create_autocraft_logistics_section);
+
+script.on_event(defines.events.on_force_reset, enable_player_force_logistics_requests);
+script.on_event(defines.events.on_forces_merged, enable_player_force_logistics_requests);
+script.on_event(defines.events.on_technology_effects_reset, enable_player_force_logistics_requests);
