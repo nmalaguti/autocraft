@@ -5,7 +5,7 @@ import { deleteAsync } from "del";
 import zip from "gulp-zip";
 
 const info = JSON.parse(await readFile("src/info.json", "utf8"));
-const release_name = `autocraft_${info.version}`;
+const release_name = `${info.name}_${info.version}`;
 const output_dir = `dist/${release_name}/`;
 const assets_glob = "src/**/*.{json,png,txt,cfg}";
 

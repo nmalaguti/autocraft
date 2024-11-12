@@ -32,9 +32,9 @@ data.extend([
     name: SHORTCUT_NAME,
     action: "lua",
     toggleable: true,
-    icon: "__autocraft__/graphics/icon/32.png",
+    icon: "__autocraft-logistics__/graphics/icon/32.png",
     icon_size: 32,
-    small_icon: "__autocraft__/graphics/icon/24.png",
+    small_icon: "__autocraft-logistics__/graphics/icon/24.png",
     small_icon_size: 24,
   } satisfies ShortcutPrototype,
 ]);
