@@ -12,7 +12,8 @@ it when you are ready!
 
 ## Download
 
-Download on the [Factorio mod portal](), either on the website or in-game.
+Download on the [Factorio mod portal](https://mods.factorio.com/mod/autocraft-logistics),
+either on the website or in-game.
 
 ## Screenshots
 
