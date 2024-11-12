@@ -1,4 +1,4 @@
-import type { ItemProduct, LuaLogisticSection, LuaPlayer, nil } from "factorio:runtime";
+import type { ItemID, ItemProduct, LuaLogisticSection, LuaPlayer } from "factorio:runtime";
 import { AUTOCRAFT_LOGISTICS_SECTION_NAME, SHORTCUT_NAME } from "./constants";
 
 type ItemRequest = {
@@ -83,10 +83,31 @@ const section_to_requests = (
   return item_requests;
 };
 
-const pick_recipe = (player: LuaPlayer, crafting_complete: boolean): string | nil => {
-  // check hand
-  // check hand for ghost
+const recipe_for_item = (player: LuaPlayer, item_name: string) => {
+  const recipes = storage.recipes?.get(item_name);
+  if (recipes === undefined) return undefined;
 
+  for (const recipe_name of recipes) {
+    // TODO: deal with multi-product recipes
+    const recipe = player.force.recipes[recipe_name];
+    const can_craft =
+      !recipe.hidden && recipe.enabled && player.get_craftable_count(recipe_name) > 0;
+
+    if (can_craft) {
+      return recipe_name;
+    }
+  }
+};
+
+const item_id_to_name = (item: ItemID) => {
+  if (typeof item === "string") {
+    return item;
+  } else {
+    return item.name;
+  }
+};
+
+const pick_recipe = (player: LuaPlayer, crafting_complete: boolean): string | undefined => {
   const autocraft_section = find_autocraft_logistics_section(player);
   if (autocraft_section === undefined) return undefined;
 
@@ -99,20 +120,20 @@ const pick_recipe = (player: LuaPlayer, crafting_complete: boolean): string | ni
     return 1;
   });
 
+  const hand_item_name = player.cursor_stack?.valid_for_read
+    ? player.cursor_stack.name
+    : player.cursor_ghost
+      ? item_id_to_name(player.cursor_ghost.name)
+      : undefined;
+
+  if (hand_item_name !== undefined && item_requests.some((item) => item.name === hand_item_name)) {
+    const recipe = recipe_for_item(player, hand_item_name);
+    if (recipe !== undefined) return recipe;
+  }
+
   for (const item_request of item_requests) {
-    const recipes = storage.recipes?.get(item_request.name);
-    if (recipes === undefined) continue;
-
-    for (const recipe_name of recipes) {
-      // TODO: deal with multi-product recipes
-      const recipe = player.force.recipes[recipe_name];
-      const can_craft =
-        !recipe.hidden && recipe.enabled && player.get_craftable_count(recipe_name) > 0;
-
-      if (can_craft) {
-        return recipe_name;
-      }
-    }
+    const recipe = recipe_for_item(player, item_request.name);
+    if (recipe !== undefined) return recipe;
   }
 
   return undefined;
