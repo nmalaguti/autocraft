@@ -68,18 +68,22 @@ const on_player_crafted_item = (event: OnPlayerCraftedItemEvent) => {
 
   const data = storage.data?.get(event.player_index);
 
-  if (data?.active_recipe_name === event.item_stack.name) {
+  if (data?.active_recipe_name === undefined) {
+    // not autocrafting
+    player.play_sound({ path: CRAFTING_FINISHED_SOUND });
+    return;
+  }
+
+  if (player.mod_settings[AUTOCRAFT_SOUND_ENABLED].value as boolean) {
+    player.play_sound({ path: CRAFTING_FINISHED_SOUND });
+  }
+
+  if (data.active_recipe_name === event.item_stack.name) {
     data.active_recipe_name = undefined;
-    if (player.mod_settings[AUTOCRAFT_SOUND_ENABLED].value as boolean) {
-      player.play_sound({ path: CRAFTING_FINISHED_SOUND });
-    }
     // last item in queue, immediately queue another
     if (player.crafting_queue.length === 1) {
       do_crafting(player, false);
     }
-  } else {
-    // Volume is set to 0 in data-final-fixes. Play sound manually.
-    player.play_sound({ path: CRAFTING_FINISHED_SOUND });
   }
 };
 
