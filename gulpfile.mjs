@@ -22,8 +22,7 @@ export const clean = async () => {
 export const build = series(clean, parallel(build_ts, build_assets, build_lint));
 
 export const dev = async () => {
-  await build();
-  watch(["src/**/*.ts", "tsconfig.json", "package.json"], parallel(build_ts, build_lint));
+  watch(["src/**/*.ts", "tsconfig.json", "package.json"], build_ts);
   watch(assets_glob, build_assets);
 };
 
